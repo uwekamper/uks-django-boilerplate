@@ -3,9 +3,9 @@ build
 include
 lib
 
-.pyc
-.sqlite3
+*.pyc
+*.sqlite3
 
 local_settings.py
 
-myproject/myapp/static/bower_components/*
+static/bower_components/*
