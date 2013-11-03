@@ -1,0 +1,50 @@
+{% extends "form_left.html" %}
+
+{% block title %}Login - instingo Coporate Health{% endblock %}
+
+{% block form_title %}Einloggen{% endblock %}
+
+{% block form_left %}
+    {% if form.errors %}
+        <div class="alert alert-danger">Benutzername und/oder Passwort waren
+        nicht korrekt. Bitte probieren Sie es noch einmal.</div>
+    {% endif %}
+
+    <form method="post" action="{% url 'django.contrib.auth.views.login' %}"
+          role="form" class="well">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ next }}" />
+
+        <div class="form-group">
+            <label for="id_username">{{ form.username.label_tag }}</label>
+            <input type="text" name="username" class="form-control" id="id_username"
+                   placeholder="Benutzername" />
+        </div>
+        <div class="form-group">
+            <label for="id_password">{{ form.password.label_tag }}</label>
+            <input type="password" name="password" class="form-control" id="id_password"
+                   placeholder="Passwort" />
+        </div>
+        <div class="form-group">
+            <button type="submit" class="btn btn-default">Weiter</button>
+        </div>
+    </form>
+{% endblock %}
+
+{% block form_help %}
+    <h3>Sie haben noch keinen Benutzernamen?</h3>
+    <p>Dann registrieren Sie sich schnell und einfach über unser
+        <a href="{% url 'registration_register' %}">Registrierungsformular</a>.</p>
+    <h3>Passwort vergessen?</h3>
+    <p>Dann lassen Sie sich Ihr <a href="{% url 'auth_password_reset' %}">Passwort zurücksetzen</a>. </p>
+{% endblock %}
+
+{% block extra_js %}
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $('#id_username').focus();
+        });
+    </script>
+{% endblock %}
+
+

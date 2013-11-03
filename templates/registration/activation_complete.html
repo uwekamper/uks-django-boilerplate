@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block title %}Freigeschaltet - instingo Coporate Health{% endblock %}
+
+{% block container %}
+    <h1>Zugang freigeschaltet</h1>
+
+    <p>Großartig! Ihr Zugang ist jetzt freigeschaltet und Sie können sich einloggen.</p>
+
+    <p><a class="btn" href="{% url 'django.contrib.auth.views.login' %}">Weiter</a></p>
+{% endblock %}

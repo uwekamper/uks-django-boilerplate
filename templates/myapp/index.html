@@ -1,0 +1,573 @@
+{% extends "base.html" %}
+{% load thumbnail %}
+
+{% block container %}
+
+    <div class="row">
+        
+        <div class="col-md-2">
+            {% include "gamification/includes/user_avatar.html" %}
+            
+            <div id="avatar-since">
+                <h5>Fit seit</h5>
+                <div class="light-blue">{{avatar.member_since}}</div>
+            </div>
+            {% include "gamification/includes/badges.html" %}
+            <div id="chart_small"><a href="#chart" data-toggle="modal"><h5>Dein Werdegang</h5></a></div>
+            <div class="modal fade" id="chart">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                          <button type="button" class="close" data-dismiss="modal" aria-hidden="true" data-show="false">&times;</button>
+                          <h3 class="modal-title">Dein Werdegang</h3>
+                        </div><!-- /.modal-header -->
+
+                        <div class="modal-body" id="chart_big">
+                            Modal-Body hier!
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-default" data-dismiss="modal">Schließen</button>
+                        </div>
+                    </div><!-- /.modal-content -->
+                </div><!-- /.modal-dialog -->
+            </div>
+        </div>
+        
+        <div class="col-md-10">
+            <div class="tabbable">
+                <ul class="nav nav-tabs" id="myTab">
+                    <li><a href="#tab0" data-toggle="tab">{{avatar.user.username}}</a></li>
+                    <li class="active"><a href="#tab1" data-toggle="tab">Hauptübungen</a></li>
+                    <li><a href="#tab3" data-toggle="tab">Gruppenübungen</a></li>
+                    <li><a href="#tab4" data-toggle="tab">Unternehmensziel</a></li>
+                </ul>
+                <!-- Tab Content-->
+                <div class="tab-content">
+                    <div class="tab-pane" id="tab0">
+                        <div class="row">
+                            <div class="col-md-7">
+                                <h4>Deine Pinnwand</h4>
+                                {% for timeline_entry in avatar_timeline %}
+                                    <div class="light-grey">
+                                    <h3>{{timeline_entry.headline}} <span class="timeline-date">am {{timeline_entry.date_time}}</span>
+                                    {% if timeline_entry.sender != "" and timeline_entry.avatar != timeline_entry.sender%}
+                                    von {{ timeline_entry.sender }}
+                                    {% endif %}
+                                    {%if timeline_entry.sender == avatar %}
+                                        | <a href="{{ request.path }}/deleteentry/timeline/{{timeline_entry.id}}/">löschen</a>
+                                    {% endif %}
+                                    </h3>
+                                    <p>{{timeline_entry.content|safe}}</p>
+                                    
+                                    <table class="table">
+                                    {% for entry_comment in timeline_entry.comments %}
+                                        <tr>
+                                            <td><img src="{{ STATIC_URL }}images/{{entry_comment.commentator.pic}}" width="40" height="40" /></td>
+                                            <td><span class="timeline-date">{{entry_comment.commentator}} am {{entry_comment.date_time}}</span>
+                                            {%if entry_comment.commentator == avatar %}
+                                               | <a href="{{ request.path }}/deleteentry/comments/{{entry_comment.id}}/">löschen</a>
+                                            {% endif %}    
+                                            <br>{{entry_comment.content}}</td>
+                                        </tr>
+                                        {%empty%}
+                                    {% endfor %}
+                                    </table>
+                                    <p class="text-center"><a href="#tab0" data-toggle="collapse" data-target="#entry{{timeline_entry.id}}">Kommentieren</a></p>
+                                    <div id="entry{{timeline_entry.id}}" class="collapse out text-center">
+                                        <form method="post" action="{{ request.path }}/addcomment/" data-validate="parsley">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="id" value="{{avatar.id}}">
+                                            <input type="hidden" name="entry_id" value="{{timeline_entry.id}}">
+                                            <input type="text" name="content" class="input-big" data-required="true"><br>
+                                            <button type="submit" class="btn">Senden</button>
+                                        </form>
+                                    </div>
+                                    </div>
+                                {% endfor %}
+                                <h4>Deine Badges</h4>
+                                {% for badge in badges%}
+                                    <a data-toggle="modal" data-target="#myModal{{badge.badge.id}}"><img src="{{ badge.badge.pic.url }}" alt="badge" width="100" height="100" /></a>
+                                    <div class="modal fade" id="myModal{{badge.badge.id}}">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                  <button type="button" class="close" data-dismiss="modal" aria-hidden="true" data-show="false">&times;</button>
+                                                  <h3 class="modal-title">{{badge.badge.name}}</h3>
+                                                </div>
+
+                                                <div class="modal-body">
+                                                    <p class="text-center"><img src="{{ STATIC_URL }}images/badges/{{ badge.badge.pic }}" alt="badge" width="150" height="150" /></p>
+                                                    <p class="text-center">{{badge.badge.description}}</p>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-default" data-dismiss="modal">Schließen</button>
+                                                </div>
+                                            </div><!-- /.modal-content -->
+                                        </div><!-- /.modal-dialog -->
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            <!-- Linke Spalte Tab0 -->
+                            <div class="col-md-3">
+                                <h4>Schreibe an Deine Pinnwand</h4>
+                                <form method="post" action="{{ request.path }}/timelineupdate/" data-validate="parsley">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="id" value="{{avatar.id}}">
+                                    <label for="headline">Überschrift</label><input type="text" name="headline" data-notblank="true">
+                                    <label for="content">Nachricht</label><textarea name="content" data-required="true"></textarea>
+                                    <button type="submit" class="btn btn-primary">Senden</button>
+                                </form>
+                                <h4>Andere Mitglieder</h4>
+                                {% for member in all_members %}
+                                    <div class="light-grey tight">
+                                    <a href="{{ request.path }}/userprofile/{{member.id}}/#tab0">
+                                    <img class="avatar-pic" src="{{ STATIC_URL }}images/{{member.pic}}" alt="avatar" width="30" height="30" /> {{member}}
+                                    </a>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-pane active" id="tab1">
+                        <div class="row">
+                            <div class="col-md-7">
+                                <h4>Deine Wochenübung</h4>
+                                {% if avatar.step == -1 and survey_return == None %}
+                                    <p class="text-center big"><a href="{{ request.path }}/survey/1/">Wie sportlich bist Du? Mache zunächst den Einstufungstest.</a></p>
+                                {% elif avatar.step == -1 and survey_return != None %}
+                                    {% if not survey_return.survey_finished %}
+                                        <div class="light-grey">
+                                            <h3>Umfrage</h3>
+                                            {{ survey_return.question }}<br>
+                                            <form action="{{ request.path }}/survey/{{survey_return.nr}}/" method="post">
+                                                {% csrf_token %}
+                                                
+                                                <div class="radio">
+                                                    <label>
+                                                        <input type="radio" name="answer" id="optionsRadios1" value="1">
+                                                        {{survey_return.question.answer_one}}
+                                                    </label>
+                                                </div>
+                                                <div class="radio">
+                                                    <label>
+                                                        <input type="radio" name="answer" id="optionsRadios1" value="2">
+                                                        {{survey_return.question.answer_two}}
+                                                    </label>
+                                                </div>
+                                                <div class="radio">
+                                                    <label>
+                                                        <input type="radio" name="answer" id="optionsRadios1" value="3">
+                                                        {{survey_return.question.answer_three}}
+                                                    </label>
+                                                </div>
+                                                <button type="submit" class="btn btn-primary">Auswählen</button>
+                                            </form>
+                                        </div>
+                                    {% else %}
+                                        <p class="text-center">
+                                        Danke.
+                                        {% if survey_return.difficulty == "E" %}
+                                            Du wurdest als Starter eingestuft.
+                                        {% elif survey_return.difficulty == "M" %}
+                                            Du wurdest als Freizeitsportler eingestuft.
+                                        {% else %}
+                                            Du wurdest als Profi eingestuft.
+                                        {% endif %}</p>
+                                        <p class="text-center big"><a href="{{ request.path }}/nexttaskopt/">Suche nun deine erste Übung</a></p>
+                                    {% endif %}
+                                {% else %}
+                                    {% for current_task, current_task_details in tasks_details_combined %}
+                                        <div class="light-grey">
+                                        {% if current_task.progress < 100 %}
+                                            <div class="progress progress-striped active">
+                                        {% else %}
+                                            <div class="progress progress-success">
+                                        {% endif %}
+                                                <div class="bar" style="width:{{current_task.progress}}%;"></div>
+                                            </div>
+                                        <h3>{{current_task.task.name}} <span class="timeline-date">begonnen am {{current_task.date_joined}}</span></h3>
+                                        {{current_task.task.description}}
+                                        <form method="post" action="{{ request.path }}/updatetaskprogress/" data-validate="parsley">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="id" value="{{ current_task.id }}" />
+                                            <label for="field">1. Tag</label><input type="text" value="{{current_task_details.0}}" name="field" data-type="digits"><br>
+                                            <label for="field">2. Tag</label><input type="text" value="{{current_task_details.1}}" name="field" data-type="digits"><br>
+                                            <label for="field">3. Tag</label><input type="text" value="{{current_task_details.2}}" name="field" data-type="digits"><br>
+                                            <label for="field">4. Tag</label><input type="text" value="{{current_task_details.3}}" name="field" data-type="digits"><br>
+                                            <label for="field">5. Tag</label><input type="text" value="{{current_task_details.4}}" name="field" data-type="digits"><br>
+                                            <button type="submit" class="btn btn-primary">Eintragen</button>
+                                        </form>
+                                        </div>
+                                    {% empty %}
+                                        <p class="text-center big">Wähle Deine nächste Übung</p> 
+                                        {% for nexttask in nexttasks %}
+                                            <div class="light-grey">
+                                            <h3><a href="{{ request.path }}/updatetask/{{nexttask.id}}/">{{nexttask.name}}</a></h3>
+                                            {{nexttask.description}}
+                                            </div>
+                                        {% empty %}
+                                            Alle Übungen erledigt.
+                                        {% endfor %}
+                                    {% endfor %}
+                                {% endif %}
+                                <p class="text-center"><a href="{{ request.path }}/resetavatar/{{avatar.id}}" style="font-size:0.8em">Reset User</a></p>
+                            </div>
+                            <div class="col-md-3">
+                                <h4>Highscore der Woche</h4>
+                                {% for rank in highscore_week %}
+                                    <div class="light-grey tight">
+                                    <a href="{{ request.path }}/userprofile/{{rank.id}}/#tab0">
+                                    <img class="avatar-pic" src="{{ STATIC_URL }}images/{{rank.pic}}" alt="avatar" width="30" height="30" /> {{rank}} mit {{rank.tmp_score}}
+                                    </a>
+                                    </div>
+                                {% endfor %}
+                                
+                                <hr>
+                                <h4>Highscore All-Time</h4>
+                                {% for rank in highscore_all %}
+                                    <div class="light-grey tight">
+                                    <a href="{{ request.path }}/userprofile/{{rank.id}}/#tab0">
+                                    <img class="avatar-pic" src="{{ STATIC_URL }}images/{{rank.pic}}" alt="avatar" width="30" height="30" /> {{rank}} mit {{rank.tmp_score}}
+                                    </a>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    
+
+                    
+                    <div class="tab-pane" id="tab3">
+                        <div class="row">
+                            <div class="col-md-7">
+                            {% if actual_group_tasks %}
+                                <h4>Deine Gruppenübung</h4>
+                                
+                                {% for actual_group_task in actual_group_tasks %}
+                                <div class="light-grey">
+                                    {% if actual_group_task.start_date %}
+                                        
+                                        <h3>{{actual_group_task.group_task}} <span class="timeline-date">begonnen am {{actual_group_task.start_date}}</span></h3>
+                                        {{actual_group_task.group_task.description|linebreaksbr}}
+                                        <form method="post" action="{{ request.path }}/updategrouptask/" data-validate="parsley">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="id" value="{{ actual_group_task.id }}" />
+                                            {% for i,j in actual_group_task.details %}
+                                                <label for="entry">{{forloop.counter}}. Tag</label><input type="text" value="{{i}}" name="field" data-type="digits"><br>
+                                            {% endfor %}
+                                            <button type="submit" class="btn btn-primary">Eintragen</button>
+                                        </form>
+                                </div>
+                                        <h4>Mitglieder der Gruppe:</h4>
+                                        {% for member in actual_group_task.members.all %}
+                                        <div class="light-grey tight">
+                                            {% if member != avatar %}
+                                            <a href="{{ request.path }}/userprofile/{{member.id}}/#tab0">
+                                            <img class="avatar-pic" src="{{ STATIC_URL }}images/{{member.pic}}" alt="avatar" width="50" height="50" /> {{member}}
+                                            </a><br>
+                                            {%else%}
+                                                <img class="avatar-pic" src="{{ STATIC_URL }}images/{{member.pic}}" alt="avatar" width="50" height="50" /> Du<br>
+                                            {%endif%}
+                                        </div>
+                                        {%empty%}
+                                            Für diese Gruppenübung hat sich außer Dir noch niemand angemeldet.
+                                        {% endfor %}
+                                        
+                                    {% else %}
+                                        <b>{{actual_group_task.group_task.name}}</b> beginnt sobald genug Personen angemeldet sind.
+                                        <hr>
+                                        Bereits angemeldet:<br><br>
+                                        {% for member in actual_group_task.members.all %}
+                                            {% if member != avatar %}
+                                            <a href="{{ request.path }}/userprofile/{{member.id}}/#tab0">
+                                            <img class="avatar-pic" src="{{ STATIC_URL }}images/{{member.pic}}" alt="avatar" width="30" height="30" /> {{member}}
+                                            </a><br>
+                                            {%else%}
+                                                <img class="avatar-pic" src="{{ STATIC_URL }}images/{{member.pic}}" alt="avatar" width="30" height="30" /> Du<br>
+                                            {%endif%}
+                                        {%empty%}
+                                            Für diese Gruppenübung hat sich außer Dir noch niemand angemeldet.
+                                        {% endfor %}
+                                        <hr>
+                                        <div class="progress">
+                                            <div class="bar bar-danger" style="width:{{actual_group_task.booked}}%;"></div>
+                                        </div>
+                                        <h3>Diese Gruppe braucht noch:</h3>
+                                        {% if actual_group_task.group_task.minimum_easy_members > 0 and actual_group_task.diff_easy != 0 %}
+                                            {{actual_group_task.diff_easy}} Starter<br>
+                                        {% endif %}
+                                        {% if actual_group_task.group_task.minimum_medium_members > 0 and actual_group_task.diff_medium != 0 %}
+                                            {{actual_group_task.diff_medium}} Freizeitsportler<br>
+                                        {% endif %}
+                                        {% if actual_group_task.group_task.minimum_hard_members > 0 and actual_group_task.diff_hard != 0 %}
+                                            {{actual_group_task.diff_hard}} Profi<br>
+                                        {% endif %}
+                                    </div>
+                                    {% endif %}
+                                {% endfor %}
+                                
+                            {% else %}    
+                                <h4>Deine Gruppenübung</h4>
+                                <p class="text-center big">Wähle eine Übung. Der rote Balken zeigt, wie viele Teilnehmer noch nötig sind, damit Ihr starten könnt.</p>
+                            {%endif%}
+                            </div>
+                        
+                            <div class="col-md-3">
+                                <h4>Verfügbare Gruppenübungen*</h4>
+                                {% for group_task in group_tasks %}
+                                    {% if actual_group_tasks.count == 0 %}
+                                    <div class="light-grey">
+                                        <div class="progress">
+                                            {% if group_task.booked == 0 %}
+                                                <div class="bar bar-danger" style="width:1%;"></div>
+                                                {%else%}
+                                                <div class="bar bar-danger" style="width:{{group_task.booked}}%;"></div>
+                                            {%endif%}
+                                        </div>
+                                        <!--<a href="{{ request.path }}/joingrouptask/{{group_task.id}}"><h3>{{group_task.group_task.name}}</h3>
+                                        <small>{{group_task.group_task.description|linebreaksbr}}</small></a>-->
+                                        <a data-toggle="modal" href="#gtmodal{{group_task.id}}"><h3>{{group_task.group_task.name}}</h3></a>
+                                        
+                                        <div class="modal fade hide" id="gtmodal{{group_task.id}}">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                      <button type="button" class="close" data-dismiss="modal" aria-hidden="true" data-show="false">&times;</button>
+                                                      <h3 class="modal-title">{{group_task.group_task.name}}</h3>
+                                                    </div>
+                                                    
+                                                    <div class="modal-body">
+                                                        {{group_task.group_task.description|linebreaksbr}}
+                                                        <hr>
+                                                        <h3>Teilnehmer:</h3>
+                                                        {% for member in group_task.members.all %}
+                                                            <a href="{{ request.path }}/userprofile/{{member.id}}/#tab0">
+                                                            <img class="avatar-pic" src="{{ STATIC_URL }}images/{{member.pic}}" alt="avatar" width="30" height="30" /> {{member}}
+                                                            </a><br>
+                                                        {%empty%}
+                                                            Für diese Gruppenübung hat sich noch niemand angemeldet.
+                                                        {% endfor %}
+                                                        <hr>
+                                                        <h3>Diese Gruppe braucht noch:</h3>
+                                                        {% if group_task.group_task.minimum_easy_members > 0 and group_task.diff_easy != 0 %}
+                                                            {{group_task.diff_easy}} Starter<br>
+                                                        {% endif %}
+                                                        {% if group_task.group_task.minimum_medium_members > 0 and group_task.diff_medium != 0 %}
+                                                            {{group_task.diff_medium}} Freizeitsportler<br>
+                                                        {% endif %}
+                                                        {% if group_task.group_task.minimum_hard_members > 0 and group_task.diff_hard != 0 %}
+                                                            {{group_task.diff_hard}} Profi<br>
+                                                        {% endif %}
+                                                        
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-danger" data-dismiss="modal">Abbrechen</button>
+                                                        <button type="button" class="btn btn-success" onclick="location.href='{{ request.path }}/joingrouptask/{{group_task.id}}'">Beitreten</button>
+                                                    </div>
+                                                </div><!-- /.modal-content -->
+                                            </div><!-- /.modal-dialog -->
+                                        </div>
+                                        <!--<hr>
+                                        <small>Bereits angemeldet:<br>
+                                        {% for member in group_task.members.all %}
+                                            <a href="{{ request.path }}/userprofile/{{rank.id}}/#tab0">
+                                            <img class="avatar-pic" src="{{ STATIC_URL }}images/{{member.pic}}" alt="avatar" width="30" height="30" /> {{member}}
+                                            </a><br>
+                                        {%empty%}
+                                            Für diese Gruppenübung hat sich noch niemand angemeldet.
+                                        {% endfor %}
+                                        <hr>
+                                        
+                                        {% if group_task.group_task.minimum_easy_members > 0 %}
+                                            Starter: {{group_task.easy_members}} von {{group_task.group_task.minimum_easy_members}}<br>
+                                        {% endif %}
+                                        {% if group_task.group_task.minimum_medium_members > 0 %}
+                                            Freizeitsportler: {{group_task.medium_members}} von {{group_task.group_task.minimum_medium_members}}<br>
+                                        {% endif %}
+                                        {% if group_task.group_task.minimum_hard_members > 0 %}
+                                            Profis: {{group_task.hard_members}} von {{group_task.group_task.minimum_hard_members}}<br>
+                                        {% endif %}
+                                        </small>-->
+                                    </div>
+                                    {% else %}
+                                    <div class="light-grey disabled">
+                                        <h3>{{group_task.group_task.name}}</h3>
+                                        <small>{{group_task.group_task.description|linebreaksbr}}</small>
+                                    </div>
+                                    {% endif %}
+                                {% endfor %}
+                                *<small>Du kannst immer nur eine Gruppenübung gleichzeitig machen</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-pane" id="tab4">
+                        <div class="row">
+                            <div class="col-md-7">
+                            <h4>Unternehmensziel</h4>
+                            {% if institutionaim %}
+                            <p class="big">{{institutionaim.name}} ({{ institutionaim.percentage }}% erreicht)</p>
+                            <table border="0" style="margin:0; padding: 0">
+                            <tr>
+                            {% for tile in grid_list %}
+                                {% if tile|divisibleby:10 %}
+                                </tr><tr>  
+                                {%endif%}
+                                <td style="padding: 0; margin: 0"><img class="institutionaimpic" src="{{ STATIC_URL }}images/companyaim/{{institutionaim.pic_base}}{{forloop.counter}}.jpg" width="50" height="50"></td>
+                            {% endfor %}
+                            </tr>
+                            </table>
+                            {% else %}
+                                Dein Unternehmen hat noch kein Unternehmensziel angelegt
+                            {% endif %}
+                            </div>
+                            <div class="col-md-3">
+                                <h4>Beschreibung</h4>
+                                <div class="light-grey">{{institutionaim.description}}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Tab Content End-->
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script type="text/javascript" src="{{ STATIC_URL }}js/random_additional_tasks.js"></script>
+<script>
+// Javascript to enable link to tab
+var url = document.location.toString();
+if (url.match('#')) {
+    $('.nav-tabs a[href=#'+url.split('#')[1]+']').tab('show') ;
+} 
+
+// Change hash for page-reload
+$('.nav-tabs a').on('shown', function (e) {
+    window.location.hash = e.target.hash;
+})
+</script>
+
+<script>
+
+var margin = {top: 20, right: 20, bottom: 30, left: 50},
+    width = 500 - margin.left - margin.right,
+    height = 350 - margin.top - margin.bottom;
+
+var parseDate = d3.time.format("%y-%m-%d").parse;
+
+var x = d3.time.scale()
+    .range([0, width]);
+
+var y = d3.scale.linear()
+    .range([height, 0]);
+
+var xAxis = d3.svg.axis()
+    .scale(x)
+    .orient("bottom");
+
+var yAxis = d3.svg.axis()
+    .scale(y)
+    .orient("left");
+
+var line = d3.svg.line()
+    .x(function(d) { return x(d.date); })
+    .y(function(d) { return y(d.close); });
+
+var svg = d3.select("#chart_big").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+d3.json("/{{ request.path }}api/points/{{avatar.id}}/", function(error, data) {
+  data.forEach(function(d) {
+    //d.date = parseDate(d.date);
+    d.close = +d.close;
+  });
+  
+  
+  x.domain(d3.extent(data, function(d) { return d.date; }));
+  y.domain(d3.extent(data, function(d) { return d.close; }));
+
+  svg.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + height + ")")
+      .call(xAxis);
+
+  svg.append("g")
+      .attr("class", "y axis")
+      .call(yAxis)
+    .append("text")
+      .attr("transform", "rotate(-90)")
+      .attr("y", 6)
+      .attr("dy", ".71em")
+      .style("text-anchor", "end")
+      .text("Punkte");
+
+  svg.append("path")
+      .datum(data)
+      .attr("class", "line")
+      .attr("d", line);
+});
+
+/* Kurve zwei */
+
+var margin2 = {top: 1, right: 1, bottom: 1, left: 1},
+    width2 = 150 - margin2.left - margin2.right,
+    height2 = 100 - margin2.top - margin2.bottom;
+
+var parseDate = d3.time.format("%y-%m-%d").parse;
+
+var x2 = d3.time.scale()
+    .range([0, width2]);
+
+var y2 = d3.scale.linear()
+    .range([height2, 0]);
+
+var xAxis2 = d3.svg.axis()
+    .scale(x2)
+    .orient("bottom");
+
+var yAxis2 = d3.svg.axis()
+    .scale(y2)
+    .orient("left");
+
+var line2 = d3.svg.line()
+    .x(function(d) { return x2(d.date); })
+    .y(function(d) { return y2(d.close); });
+
+var svg2 = d3.select("#chart_small").append("svg")
+    .attr("width", width2 + margin2.left + margin2.right)
+    .attr("height", height2 + margin2.top + margin2.bottom)
+  .append("g")
+    .attr("transform", "translate(" + margin2.left + "," + margin2.top + ")");
+
+d3.json("/{{ request.path }}api/points/{{avatar.id}}/", function(error, data) {
+  data.forEach(function(d) {
+    //d.date = parseDate(d.date);
+    d.close = +d.close;
+  });
+  
+  
+  x2.domain(d3.extent(data, function(d) { return d.date; }));
+  y2.domain(d3.extent(data, function(d) { return d.close; }));
+
+  svg2.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + height2 + ")")
+      .call(xAxis2);
+
+  svg2.append("g")
+      .attr("class", "y axis")
+      .call(yAxis2);
+
+  svg2.append("path")
+      .datum(data)
+      .attr("class", "line")
+      .attr("d", line2);
+});
+
+</script>
+{% endblock %}

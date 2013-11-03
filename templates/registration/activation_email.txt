@@ -1,0 +1,15 @@
+Hallo!
+
+Sie haben sich bei instingo Corporate Health registriert. Damit Sie ihren
+Zugang nutzen können, müssen Sie ihn noch freischalten.
+
+Klicken Sie zum Freischalten auf den folgenden Link:
+
+http://{{ site.domain }}{% url 'registration_activate' activation_key %}
+
+Dieser Freischalt-Code ist {{ expiration_days }} Tage gültig.
+
+
+Viele Grüße,
+
+  das Team von instingo Corporate Health
