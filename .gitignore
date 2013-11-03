@@ -7,3 +7,5 @@ lib
 .sqlite3
 
 local_settings.py
+
+myproject/myapp/static/bower_components/*
